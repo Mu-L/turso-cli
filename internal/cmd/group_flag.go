@@ -222,7 +222,7 @@ func checkIfDump(filename string) (bool, error) {
 
 // getReservedBytes retrieves the current reserved bytes setting from a SQLite database
 func getReservedBytes(dbPath string) (int, error) {
-	output, err := exec.Command("sqlite3", dbPath, ".filectrl reserve_bytes").CombinedOutput()
+	output, err := exec.Command("sqlite3", "-list", dbPath, ".filectrl reserve_bytes").CombinedOutput()
 	if err != nil {
 		return 0, fmt.Errorf("failed to get reserved bytes: %w", err)
 	}
@@ -295,7 +295,7 @@ func sqliteFileIntegrityChecks(file string, cipher string) error {
 	if flags.Debug() {
 		log.Printf("Checking database settings...")
 	}
-	output, err := exec.Command("sqlite3", file, ".mode line",
+	output, err := exec.Command("sqlite3", "-list", file, ".mode line",
 		"select journal_mode as j, page_size as p, auto_vacuum as a, encoding as e from pragma_journal_mode, pragma_page_size, pragma_auto_vacuum, pragma_encoding;").CombinedOutput()
 	if err != nil {
 
@@ -340,7 +340,7 @@ func sqliteFileIntegrityChecks(file string, cipher string) error {
 }
 
 func runQuickCheck(file string) error {
-	cmd := exec.Command("sqlite3", file, "pragma quick_check;")
+	cmd := exec.Command("sqlite3", "-list", file, "pragma quick_check;")
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("integrity check failed: %w", err)
 	}
@@ -405,7 +405,7 @@ func checkSQLiteAvailable() error {
 }
 
 func checkSQLiteFile(file string) error {
-	output, err := exec.Command("sqlite3", file, "pragma quick_check;").CombinedOutput()
+	output, err := exec.Command("sqlite3", "-list", file, "pragma quick_check;").CombinedOutput()
 
 	execErr := &exec.ExitError{}
 	if errors.As(err, &execErr) && execErr.ExitCode() == 26 {
@@ -428,7 +428,7 @@ func createTempFile() (*os.File, error) {
 
 func dumpSQLiteDatabase(database string, dump *os.File) error {
 	stdErr := &bytes.Buffer{}
-	cmd := exec.Command("sqlite3", database, ".dump")
+	cmd := exec.Command("sqlite3", "-list", database, ".dump")
 	cmd.Stdout = dump
 	cmd.Stderr = stdErr
 

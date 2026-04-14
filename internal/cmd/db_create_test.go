@@ -230,7 +230,7 @@ func TestGetReservedBytes(t *testing.T) {
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "test.db")
 
-	cmd := exec.Command("sqlite3", dbPath, "CREATE TABLE test (id INTEGER);")
+	cmd := exec.Command("sqlite3", "-list", dbPath, "CREATE TABLE test (id INTEGER);")
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("failed to create test database: %v", err)
 	}
@@ -255,12 +255,12 @@ func TestValidateReservedBytesAllCiphers(t *testing.T) {
 			tmpDir := t.TempDir()
 			dbPath := filepath.Join(tmpDir, "test.db")
 
-			cmd := exec.Command("sqlite3", dbPath, "CREATE TABLE test (id INTEGER);")
+			cmd := exec.Command("sqlite3", "-list", dbPath, "CREATE TABLE test (id INTEGER);")
 			if err := cmd.Run(); err != nil {
 				t.Fatalf("failed to create test database: %v", err)
 			}
 
-			cmd = exec.Command("sqlite3", dbPath,
+			cmd = exec.Command("sqlite3", "-list", dbPath,
 				fmt.Sprintf(".filectrl reserve_bytes %d", expectedBytes),
 				"VACUUM;")
 			if err := cmd.Run(); err != nil {
@@ -300,12 +300,12 @@ func TestCipherReservedBytesCrossValidation(t *testing.T) {
 			tmpDir := t.TempDir()
 			dbPath := filepath.Join(tmpDir, "test.db")
 
-			cmd := exec.Command("sqlite3", dbPath, "CREATE TABLE test (id INTEGER);")
+			cmd := exec.Command("sqlite3", "-list", dbPath, "CREATE TABLE test (id INTEGER);")
 			if err := cmd.Run(); err != nil {
 				t.Fatalf("failed to create test database: %v", err)
 			}
 
-			cmd = exec.Command("sqlite3", dbPath,
+			cmd = exec.Command("sqlite3", "-list", dbPath,
 				fmt.Sprintf(".filectrl reserve_bytes %d", tt.wrongBytes),
 				"VACUUM;")
 			if err := cmd.Run(); err != nil {
