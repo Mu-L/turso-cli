@@ -22,7 +22,7 @@ func createTestDatabase(t *testing.T, sizeBytes int) string {
 	dbPath := filepath.Join(tmpDir, "test.db")
 
 	// Create database with correct settings for Turso
-	cmd := exec.Command("sqlite3", dbPath,
+	cmd := exec.Command("sqlite3", "-list", dbPath,
 		"PRAGMA page_size=4096;",
 		"PRAGMA journal_mode=WAL;",
 		"CREATE TABLE data (id INTEGER PRIMARY KEY, blob BLOB);")
@@ -36,7 +36,7 @@ func createTestDatabase(t *testing.T, sizeBytes int) string {
 			numRows = 1
 		}
 		for i := 0; i < numRows; i++ {
-			cmd = exec.Command("sqlite3", dbPath,
+			cmd = exec.Command("sqlite3", "-list", dbPath,
 				fmt.Sprintf("INSERT INTO data (blob) VALUES (randomblob(%d));", rowSize))
 			require.NoError(t, cmd.Run())
 		}
