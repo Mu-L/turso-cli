@@ -419,7 +419,6 @@ func (d *DatabasesClient) Rotate(database string) error {
 	return nil
 }
 
-
 type Stats struct {
 	Query       string `json:"query"`
 	RowsRead    int    `json:"rows_read"`

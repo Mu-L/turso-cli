@@ -334,7 +334,6 @@ func (d *GroupsClient) Rotate(group string) error {
 	return nil
 }
 
-
 func (d *GroupsClient) Rename(oldName, newName string) error {
 	type Body struct{ Name string }
 	body, err := marshal(Body{Name: newName})
