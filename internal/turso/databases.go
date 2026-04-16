@@ -419,29 +419,6 @@ func (d *DatabasesClient) Rotate(database string) error {
 	return nil
 }
 
-func (d *DatabasesClient) Update(database string, group bool) error {
-	url := d.URL(fmt.Sprintf("/%s/update", database))
-	if group {
-		url += "?group=true"
-	}
-	r, err := d.client.Post(url, nil)
-	if err != nil {
-		return fmt.Errorf("failed to update database: %w", err)
-	}
-	defer r.Body.Close()
-
-	org := d.client.Org
-	if isNotMemberErr(r.StatusCode, org) {
-		return notMemberErr(org)
-	}
-
-	if r.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to update database: %w", parseResponseError(r))
-	}
-
-	return nil
-}
-
 type Stats struct {
 	Query       string `json:"query"`
 	RowsRead    int    `json:"rows_read"`

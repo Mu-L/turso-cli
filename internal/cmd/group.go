@@ -291,3 +291,17 @@ func handleGroupWaitFlag(client *turso.Client, group, location string) error {
 	}
 	return client.Groups.WaitLocation(group, location)
 }
+
+func groupArg(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) > 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
+	}
+
+	client, err := authedTursoClient()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
+	}
+
+	groups, _ := groupNames(client)
+	return groups, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
+}
