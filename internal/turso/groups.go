@@ -334,31 +334,6 @@ func (d *GroupsClient) Rotate(group string) error {
 	return nil
 }
 
-func (d *GroupsClient) Update(group string, version, extensions string) error {
-	type Body struct{ Version, Extensions string }
-	body, err := marshal(Body{version, extensions})
-	if err != nil {
-		return fmt.Errorf("could not serialize request body: %w", err)
-	}
-
-	url := d.URL(fmt.Sprintf("/%s/update", group))
-	r, err := d.client.Post(url, body)
-	if err != nil {
-		return fmt.Errorf("failed to update group: %w", err)
-	}
-	defer r.Body.Close()
-
-	org := d.client.Org
-	if isNotMemberErr(r.StatusCode, org) {
-		return notMemberErr(org)
-	}
-
-	if r.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to update group: %w", parseResponseError(r))
-	}
-
-	return nil
-}
 
 func (d *GroupsClient) Rename(oldName, newName string) error {
 	type Body struct{ Name string }
