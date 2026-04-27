@@ -47,17 +47,6 @@ func (df *DatabaseFetcher) FetchPage(pageSize int, cursor *string) (turso.ListRe
 		}
 		groupID = id
 	}
-	parentDbId := ""
-	if df.ParentDbId != "" {
-		id, err := tryResolveDbID(df.client, df.ParentDbId)
-		if err != nil {
-			return turso.ListResponse{}, err
-		}
-		if id == "" {
-			return df.fetchPageV2(pageSize, cursor)
-		}
-		parentDbId = id
-	}
 	cursorStr := ""
 	if cursor != nil {
 		cursorStr = *cursor
@@ -66,7 +55,7 @@ func (df *DatabaseFetcher) FetchPage(pageSize int, cursor *string) (turso.ListRe
 		GroupId:    groupID,
 		Limit:      pageSize,
 		Cursor:     cursorStr,
-		ParentDbId: parentDbId,
+		ParentDbId: df.ParentDbId,
 	}
 	dbs, err := df.client.DatabasesV3.List(orgID, options)
 	if err != nil {
