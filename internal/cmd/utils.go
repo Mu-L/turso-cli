@@ -164,7 +164,7 @@ func destroyDatabases(client *turso.Client, names []string) error {
 	for _, name := range names {
 		name := name
 		g.Go(func() error {
-			return client.Databases.Delete(name)
+			return deleteDatabase(client, name)
 		})
 	}
 
@@ -184,6 +184,23 @@ func destroyDatabases(client *turso.Client, names []string) error {
 	fmt.Println(msg)
 
 	return nil
+}
+
+func deleteDatabase(client *turso.Client, name string) error {
+	orgID, err := tryResolveOrgID(client)
+	if err != nil {
+		return err
+	}
+	if orgID != "" {
+		dbID, err := tryResolveDbID(client, name)
+		if err != nil {
+			return err
+		}
+		if dbID != "" {
+			return client.DatabasesV3.Delete(orgID, dbID)
+		}
+	}
+	return client.Databases.Delete(name)
 }
 
 func destroyDatabaseRegion(client *turso.Client, database, region string) error {

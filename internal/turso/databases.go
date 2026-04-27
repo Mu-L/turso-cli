@@ -95,6 +95,36 @@ func (d *DatabasesClient) List(options DatabaseListOptions) (ListResponse, error
 	return resp, nil
 }
 
+func (d *DatabasesClient) Get(name string) (Database, error) {
+	r, err := d.client.Get(d.URL("/"+name), nil)
+	if err != nil {
+		return Database{}, fmt.Errorf("failed to get database %s: %w", name, err)
+	}
+	defer r.Body.Close()
+
+	org := d.client.Org
+	if isNotMemberErr(r.StatusCode, org) {
+		return Database{}, notMemberErr(org)
+	}
+
+	if r.StatusCode == http.StatusNotFound {
+		return Database{}, fmt.Errorf("database %s not found. List known databases using %s", internal.Emph(name), internal.Emph("turso db list"))
+	}
+
+	if r.StatusCode != http.StatusOK {
+		return Database{}, fmt.Errorf("failed to get database %s: %w", name, parseResponseError(r))
+	}
+
+	type Response struct {
+		Database Database `json:"database"`
+	}
+	resp, err := unmarshal[Response](r)
+	if err != nil {
+		return Database{}, err
+	}
+	return resp.Database, nil
+}
+
 func (d *DatabasesClient) Delete(database string) error {
 	url := d.URL("/" + database)
 	r, err := d.client.Delete(url, nil)

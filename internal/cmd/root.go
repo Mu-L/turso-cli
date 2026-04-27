@@ -112,6 +112,7 @@ func init() {
 	}
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 	flags.AddDebugFlag(rootCmd)
+	flags.AddV3ApiFlag(rootCmd)
 	flags.AddResetConfigFlag(rootCmd)
 }
 
