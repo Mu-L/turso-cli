@@ -188,20 +188,24 @@ func destroyDatabases(client *turso.Client, names []string) error {
 }
 
 func deleteDatabase(client *turso.Client, name string) error {
+	if !flags.V3Api() {
+		return client.Databases.Delete(name)
+	}
 	orgID, err := tryResolveOrgID(client)
 	if err != nil {
 		return err
 	}
-	if orgID != "" {
-		dbID, err := tryResolveDbID(client, name)
-		if err != nil {
-			return err
-		}
-		if dbID != "" {
-			return client.DatabasesV3.Delete(orgID, dbID)
-		}
+	if orgID == "" {
+		return client.Databases.Delete(name)
 	}
-	return client.Databases.Delete(name)
+	dbID, err := tryResolveDbID(client, name)
+	if err != nil {
+		return err
+	}
+	if dbID == "" {
+		return client.Databases.Delete(name)
+	}
+	return client.DatabasesV3.Delete(orgID, dbID)
 }
 
 func destroyDatabaseRegion(client *turso.Client, database, region string) error {

@@ -293,7 +293,7 @@ func getGroup(client *turso.Client, name string) (turso.Group, error) {
 	if err != nil {
 		return turso.Group{}, err
 	}
-	if groupID != "" {
+	if groupID == "" {
 		return getGroupV2(client, name)
 	}
 	return client.GroupsV3.Get(orgID, groupID)
