@@ -20,6 +20,7 @@ type DatabaseFetcher struct {
 	SchemaFilter string
 	GroupFilter  string
 	ParentDbId   string
+	LoadFullInfo bool
 }
 
 func (df *DatabaseFetcher) FetchPage(pageSize int, cursor *string) (turso.ListResponse, error) {
@@ -65,6 +66,14 @@ func (df *DatabaseFetcher) FetchPage(pageSize int, cursor *string) (turso.ListRe
 	if next != "" {
 		response.Pagination = &turso.Pagination{Next: &next}
 	}
+	if df.LoadFullInfo {
+		for i := range response.Databases {
+			response.Databases[i], err = df.client.DatabasesV3.Get(orgID, response.Databases[i].ID)
+			if err != nil {
+				return turso.ListResponse{}, err
+			}
+		}
+	}
 	return response, nil
 }
 
@@ -79,9 +88,22 @@ func (df *DatabaseFetcher) fetchPageV2(pageSize int, cursor *string) (turso.List
 		Schema: schemaFilter,
 		Limit:  pageSize,
 		Cursor: cursorStr,
+		Parent: df.ParentDbId,
 	}
 
-	return df.client.Databases.List(options)
+	response, err := df.client.Databases.List(options)
+	if err != nil {
+		return turso.ListResponse{}, err
+	}
+	if df.LoadFullInfo {
+		for i := range response.Databases {
+			response.Databases[i], err = df.client.Databases.Get(response.Databases[i].Name)
+			if err != nil {
+				return turso.ListResponse{}, err
+			}
+		}
+	}
+	return response, nil
 }
 
 var listCmd = &cobra.Command{

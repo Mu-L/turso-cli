@@ -55,8 +55,9 @@ var showCmd = &cobra.Command{
 
 		if showBranchesFlag {
 			fetcher := &DatabaseFetcher{
-				client:     client,
-				ParentDbId: db.ID,
+				client:       client,
+				ParentDbId:   db.ID,
+				LoadFullInfo: true,
 			}
 			return printDatabaseList(fetcher)
 		}

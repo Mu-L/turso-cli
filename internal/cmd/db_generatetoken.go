@@ -78,16 +78,16 @@ func getToken(
 	fineGrainedPermissions []flags.FineGrainedPermissions,
 ) (string, error) {
 	if group {
-		if group && database.Group == "" {
+		if database.Group == "" {
 			return "", errors.New("--group flag can only be set with group databases")
 		}
 		return client.Groups.Token(database.Group, expiration, readOnly, claim, fineGrainedPermissions)
 	}
 	if !flags.V3Api() {
-		return getTokenV2(client, database, expiration, readOnly, group, claim, fineGrainedPermissions)
+		return getTokenV2(client, database, expiration, readOnly, claim, fineGrainedPermissions)
 	}
 	if claim != nil {
-		return getTokenV2(client, database, expiration, readOnly, group, claim, fineGrainedPermissions)
+		return getTokenV2(client, database, expiration, readOnly, claim, fineGrainedPermissions)
 	}
 	orgID, err := tryResolveOrgID(client)
 	if err != nil {
@@ -95,7 +95,7 @@ func getToken(
 	}
 	dbID := database.ID
 	if orgID == "" || dbID == "" {
-		return getTokenV2(client, database, expiration, readOnly, group, claim, fineGrainedPermissions)
+		return getTokenV2(client, database, expiration, readOnly, claim, fineGrainedPermissions)
 	}
 	return client.DatabasesV3.Token(orgID, dbID, expiration, readOnly, fineGrainedPermissions)
 }
@@ -104,12 +104,9 @@ func getTokenV2(
 	client *turso.Client,
 	database turso.Database,
 	expiration string,
-	readOnly, group bool,
+	readOnly bool,
 	claim *turso.PermissionsClaim,
 	fineGrainedPermissions []flags.FineGrainedPermissions,
 ) (string, error) {
-	if group && database.Group == "" {
-		return "", errors.New("--group flag can only be set with group databases")
-	}
-	return client.Groups.Token(database.Group, expiration, readOnly, claim, fineGrainedPermissions)
+	return client.Databases.Token(database.Name, expiration, readOnly, claim, fineGrainedPermissions)
 }
