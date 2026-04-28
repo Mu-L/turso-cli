@@ -23,7 +23,7 @@ func tryResolveOrgID(client *turso.Client) (string, error) {
 }
 
 func findOrgID(orgs []turso.Organization, slug string) string {
-    for _, o := range orgs {
+	for _, o := range orgs {
 		if o.Slug == slug || (slug == "" && o.Type == "personal") {
 			return o.ID
 		}
