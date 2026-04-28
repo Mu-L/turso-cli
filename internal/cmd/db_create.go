@@ -92,7 +92,7 @@ func CreateDatabase(name string) error {
 		return err
 	}
 
-	groups, err := client.Groups.List()
+	groups, err := listGroups(client)
 	if err != nil {
 		return err
 	}
@@ -157,6 +157,9 @@ func createDatabase(client *turso.Client, name, location, groupName string, seed
 	}
 	if seed != nil && seed.Type != "database" && seed.Type != "upload" {
 		return createDatabaseV2(client, name, location, groupName, seed, spinner)
+	}
+	if flags.V3Api() {
+		_, _ = getGroups(client, true)
 	}
 	orgID, err := tryResolveOrgID(client)
 	if err != nil {

@@ -33,7 +33,7 @@ type DatabaseV3ListOptions struct {
 	Cursor     string
 }
 
-func (d *DatabasesV3Client) List(orgID string, options DatabaseV3ListOptions) ([]Database, error) {
+func (d *DatabasesV3Client) List(orgID string, options DatabaseV3ListOptions) ([]Database, string, error) {
 	path := d.url(orgID, "")
 	q := url.Values{}
 	if options.GroupId != "" {
@@ -54,22 +54,23 @@ func (d *DatabasesV3Client) List(orgID string, options DatabaseV3ListOptions) ([
 
 	r, err := d.client.Get(path, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list databases: %w", err)
+		return nil, "", fmt.Errorf("failed to list databases: %w", err)
 	}
 	defer r.Body.Close()
 
 	if r.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to list databases: %w", parseResponseError(r))
+		return nil, "", fmt.Errorf("failed to list databases: %w", parseResponseError(r))
 	}
 
 	type response struct {
-		Databases []Database `json:"databases"`
+		Databases  []Database `json:"databases"`
+		NextCursor string     `json:"next_cursor"`
 	}
 	resp, err := unmarshal[response](r)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return resp.Databases, nil
+	return resp.Databases, resp.NextCursor, nil
 }
 
 func (d *DatabasesV3Client) Get(orgID, dbID string) (Database, error) {
@@ -89,6 +90,27 @@ func (d *DatabasesV3Client) Get(orgID, dbID string) (Database, error) {
 	resp, err := unmarshal[response](r)
 	if err != nil {
 		return Database{}, err
+	}
+	return resp.Database, nil
+}
+
+func (d *DatabasesV3Client) GetConfig(orgID, dbID string) (DatabaseConfig, error) {
+	r, err := d.client.Get(d.url(orgID, "/"+dbID), nil)
+	if err != nil {
+		return DatabaseConfig{}, fmt.Errorf("failed to get database: %w", err)
+	}
+	defer r.Body.Close()
+
+	if r.StatusCode != http.StatusOK {
+		return DatabaseConfig{}, fmt.Errorf("failed to get database: %w", parseResponseError(r))
+	}
+
+	type response struct {
+		Database DatabaseConfig `json:"database"`
+	}
+	resp, err := unmarshal[response](r)
+	if err != nil {
+		return DatabaseConfig{}, err
 	}
 	return resp.Database, nil
 }

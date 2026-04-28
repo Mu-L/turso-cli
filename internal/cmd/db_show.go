@@ -38,7 +38,7 @@ var showCmd = &cobra.Command{
 			return err
 		}
 
-		config, err := client.Databases.GetConfig(db.Name)
+		config, err := getDatabaseConfig(client, db.Name)
 		if err != nil {
 			return err
 		}

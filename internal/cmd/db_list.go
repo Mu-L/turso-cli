@@ -57,11 +57,15 @@ func (df *DatabaseFetcher) FetchPage(pageSize int, cursor *string) (turso.ListRe
 		Cursor:     cursorStr,
 		ParentDbId: df.ParentDbId,
 	}
-	dbs, err := df.client.DatabasesV3.List(orgID, options)
+	dbs, next, err := df.client.DatabasesV3.List(orgID, options)
 	if err != nil {
 		return turso.ListResponse{}, err
 	}
-	return turso.ListResponse{Databases: dbs}, nil
+	response := turso.ListResponse{Databases: dbs}
+	if next != "" {
+		response.Pagination = &turso.Pagination{Next: &next}
+	}
+	return response, nil
 }
 
 func (df *DatabaseFetcher) fetchPageV2(pageSize int, cursor *string) (turso.ListResponse, error) {

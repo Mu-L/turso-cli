@@ -19,6 +19,7 @@ import (
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/tursodatabase/turso-cli/internal"
+	"github.com/tursodatabase/turso-cli/internal/flags"
 	"github.com/tursodatabase/turso-cli/internal/prompt"
 	"github.com/tursodatabase/turso-cli/internal/settings"
 	"github.com/tursodatabase/turso-cli/internal/turso"
@@ -376,6 +377,9 @@ func fetchLatestVersion() (string, error) {
 }
 
 func instancesAndUsage(client *turso.Client, database string) (instances []turso.Instance, usage turso.DbUsage, err error) {
+	if flags.V3Api() {
+		return nil, turso.DbUsage{}, nil
+	}
 	g := errgroup.Group{}
 	g.Go(func() (err error) {
 		instances, err = client.Instances.List(database)

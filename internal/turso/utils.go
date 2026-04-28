@@ -48,7 +48,7 @@ func GetFeatureError(body []byte, feature string) error {
 func parseResponseError(res *http.Response) error {
 	d, err := io.ReadAll(res.Body)
 	if err != nil {
-		return fmt.Errorf("response failed with status %s", res.Status)
+		return fmt.Errorf("response failed with status %s (%s)", res.Status, d)
 	}
 
 	var errResp ErrorResponseDetails
@@ -57,5 +57,5 @@ func parseResponseError(res *http.Response) error {
 			return fmt.Errorf("%v", errResp.Error)
 		}
 	}
-	return fmt.Errorf("response failed with status %s", res.Status)
+	return fmt.Errorf("response failed with status %s (%s)", res.Status, d)
 }
