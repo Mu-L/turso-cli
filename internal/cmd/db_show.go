@@ -123,11 +123,6 @@ var showCmd = &cobra.Command{
 
 		fmt.Println()
 
-		if len(instances) == 0 {
-			fmt.Printf("🛠 Run %s to finish your database creation!\n", internal.Emph("turso db replicate "+db.Name))
-			return nil
-		}
-
 		fmt.Print("Database Instances:\n")
 		printTable(headers, data)
 

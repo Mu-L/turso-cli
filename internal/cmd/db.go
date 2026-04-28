@@ -39,7 +39,7 @@ func extractDatabaseNames(databases []turso.Database) []string {
 	return names
 }
 
-func getDatabaseConfig(client *turso.Client, name string, fresh ...bool) (turso.DatabaseConfig, error) {
+func getDatabaseConfig(client *turso.Client, name string) (turso.DatabaseConfig, error) {
 	if !flags.V3Api() {
 		return client.Databases.GetConfig(name)
 	}
