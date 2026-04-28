@@ -7,7 +7,6 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/rodaine/table"
 	"github.com/spf13/cobra"
-	"github.com/tursodatabase/turso-cli/internal"
 	"github.com/tursodatabase/turso-cli/internal/turso"
 )
 
@@ -55,11 +54,6 @@ var dbInspectCmd = &cobra.Command{
 		fmt.Printf("Number of rows written: %d\n", dbUsage.Usage.RowsWritten)
 		if dbUsage.Usage.BytesSynced != 0 {
 			fmt.Printf("Embedded syncs: %s\n", humanize.Bytes(dbUsage.Usage.BytesSynced))
-		}
-
-		if len(instances) == 0 {
-			fmt.Printf("\n🛠 Run %s to finish your database creation!\n", internal.Emph("turso db replicate "+db.Name))
-			return nil
 		}
 
 		if !verboseFlag {

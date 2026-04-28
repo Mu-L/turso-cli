@@ -27,6 +27,7 @@ type Client struct {
 
 	Instances     *InstancesClient
 	Databases     *DatabasesClient
+	DatabasesV3   *DatabasesV3Client
 	Organizations *OrganizationsClient
 	ApiTokens     *ApiTokensClient
 	Locations     *LocationsClient
@@ -36,6 +37,7 @@ type Client struct {
 	Subscriptions *SubscriptionClient
 	Billing       *BillingClient
 	Groups        *GroupsClient
+	GroupsV3      *GroupsV3Client
 	Invoices      *InvoicesClient
 }
 
@@ -50,6 +52,7 @@ func New(base *url.URL, token string, cliVersion string, org string) *Client {
 	c.base = &client{c}
 	c.Instances = (*InstancesClient)(c.base)
 	c.Databases = (*DatabasesClient)(c.base)
+	c.DatabasesV3 = (*DatabasesV3Client)(c.base)
 	c.Organizations = (*OrganizationsClient)(c.base)
 	c.ApiTokens = (*ApiTokensClient)(c.base)
 	c.Locations = (*LocationsClient)(c.base)
@@ -59,6 +62,7 @@ func New(base *url.URL, token string, cliVersion string, org string) *Client {
 	c.Subscriptions = (*SubscriptionClient)(c.base)
 	c.Billing = (*BillingClient)(c.base)
 	c.Groups = (*GroupsClient)(c.base)
+	c.GroupsV3 = (*GroupsV3Client)(c.base)
 	c.Invoices = (*InvoicesClient)(c.base)
 	return c
 }

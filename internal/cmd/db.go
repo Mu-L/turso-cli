@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/tursodatabase/turso-cli/internal"
+	"github.com/tursodatabase/turso-cli/internal/flags"
 	"github.com/tursodatabase/turso-cli/internal/settings"
 	"github.com/tursodatabase/turso-cli/internal/turso"
 )
@@ -38,6 +39,21 @@ func extractDatabaseNames(databases []turso.Database) []string {
 	return names
 }
 
+func getDatabaseConfig(client *turso.Client, name string) (turso.DatabaseConfig, error) {
+	if !flags.V3Api() {
+		return client.Databases.GetConfig(name)
+	}
+	orgID, err := tryResolveOrgID(client)
+	if err != nil {
+		return turso.DatabaseConfig{}, err
+	}
+	dbID, err := tryResolveDbID(client, name)
+	if err != nil {
+		return turso.DatabaseConfig{}, err
+	}
+	return client.DatabasesV3.GetConfig(orgID, dbID)
+}
+
 func getDatabase(client *turso.Client, name string, fresh ...bool) (turso.Database, error) {
 	databases, err := getDatabases(client, fresh...)
 	if err != nil {
@@ -53,17 +69,40 @@ func getDatabase(client *turso.Client, name string, fresh ...bool) (turso.Databa
 	return turso.Database{}, fmt.Errorf("database %s not found. List known databases using %s", internal.Emph(name), internal.Emph("turso db list"))
 }
 
+func listDatabases(client *turso.Client) ([]turso.Database, error) {
+	if !flags.V3Api() {
+		return listDatabasesV2(client)
+	}
+	orgID, err := tryResolveOrgID(client)
+	if err != nil {
+		return nil, err
+	}
+	if orgID == "" {
+		return listDatabasesV2(client)
+	}
+	databases, _, err := client.DatabasesV3.List(orgID, turso.DatabaseV3ListOptions{})
+	return databases, err
+}
+
+func listDatabasesV2(client *turso.Client) ([]turso.Database, error) {
+	response, err := client.Databases.List(turso.DatabaseListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return response.Databases, err
+}
+
 func getDatabases(client *turso.Client, fresh ...bool) ([]turso.Database, error) {
 	skipCache := len(fresh) > 0 && fresh[0]
 	if cachedNames := getDatabasesCache(); !skipCache && cachedNames != nil {
 		return cachedNames, nil
 	}
-	r, err := client.Databases.List(turso.DatabaseListOptions{})
+	databases, err := listDatabases(client)
 	if err != nil {
 		return nil, err
 	}
-	setDatabasesCache(r.Databases)
-	return r.Databases, nil
+	setDatabasesCache(databases)
+	return databases, nil
 }
 
 func getDatabasesMap(client *turso.Client, fresh bool) (map[string]turso.Database, error) {

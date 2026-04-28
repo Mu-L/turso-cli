@@ -19,6 +19,7 @@ type GroupStatus struct {
 	Locations []LocationStatus `json:"locations"`
 }
 type Group struct {
+	UUID      string      `json:"uuid,omitempty"`
 	Name      string      `json:"name"`
 	Locations []string    `json:"locations"`
 	Primary   string      `json:"primary"`

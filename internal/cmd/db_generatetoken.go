@@ -62,7 +62,7 @@ var dbGenerateTokenCmd = &cobra.Command{
 		}
 		token, err := getToken(client, database, expiration, flags.ReadOnly(), groupTokenFlag, claim, permissions)
 		if err != nil {
-			return errors.New("your database does not support token generation")
+			return fmt.Errorf("failed to generate database token: %v", err)
 		}
 		fmt.Println(token)
 		return nil
@@ -77,11 +77,36 @@ func getToken(
 	claim *turso.PermissionsClaim,
 	fineGrainedPermissions []flags.FineGrainedPermissions,
 ) (string, error) {
-	if !group {
-		return client.Databases.Token(database.Name, expiration, readOnly, claim, fineGrainedPermissions)
+	if group {
+		if database.Group == "" {
+			return "", errors.New("--group flag can only be set with group databases")
+		}
+		return client.Groups.Token(database.Group, expiration, readOnly, claim, fineGrainedPermissions)
 	}
-	if group && database.Group == "" {
-		return "", errors.New("--group flag can only be set with group databases")
+	if !flags.V3Api() {
+		return getTokenV2(client, database, expiration, readOnly, claim, fineGrainedPermissions)
 	}
-	return client.Groups.Token(database.Group, expiration, readOnly, claim, fineGrainedPermissions)
+	if claim != nil {
+		return getTokenV2(client, database, expiration, readOnly, claim, fineGrainedPermissions)
+	}
+	orgID, err := tryResolveOrgID(client)
+	if err != nil {
+		return "", err
+	}
+	dbID := database.ID
+	if orgID == "" || dbID == "" {
+		return getTokenV2(client, database, expiration, readOnly, claim, fineGrainedPermissions)
+	}
+	return client.DatabasesV3.Token(orgID, dbID, expiration, readOnly, fineGrainedPermissions)
+}
+
+func getTokenV2(
+	client *turso.Client,
+	database turso.Database,
+	expiration string,
+	readOnly bool,
+	claim *turso.PermissionsClaim,
+	fineGrainedPermissions []flags.FineGrainedPermissions,
+) (string, error) {
+	return client.Databases.Token(database.Name, expiration, readOnly, claim, fineGrainedPermissions)
 }

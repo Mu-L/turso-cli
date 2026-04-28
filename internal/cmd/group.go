@@ -227,22 +227,14 @@ func aggregateGroupStatus(group turso.Group) string {
 	if group.Archived {
 		return "Archived 💤"
 	}
-	allIdle := true
 	for _, locationStatus := range group.Status.Locations {
 		if group.Primary == locationStatus.Name && locationStatus.Status == "down" {
 			status = "Unhealthy"
 			break
 		}
-		if locationStatus.Status != "stopped" {
-			allIdle = false
-		}
 		if locationStatus.Status == "down" {
-			allIdle = false
 			status = "Degraded"
 		}
-	}
-	if allIdle {
-		status = "Idle"
 	}
 	return status
 }
@@ -252,12 +244,26 @@ func getGroups(client *turso.Client, fresh ...bool) ([]turso.Group, error) {
 	if cached := getGroupsCache(client.Org); !skipCache && cached != nil {
 		return cached, nil
 	}
-	groups, err := client.Groups.List()
+	groups, err := listGroups(client)
 	if err != nil {
 		return nil, err
 	}
 	setGroupsCache(client.Org, groups)
 	return groups, nil
+}
+
+func listGroups(client *turso.Client) ([]turso.Group, error) {
+	if !flags.V3Api() {
+		return client.Groups.List()
+	}
+	orgID, err := tryResolveOrgID(client)
+	if err != nil {
+		return nil, err
+	}
+	if orgID == "" {
+		return client.Groups.List()
+	}
+	return client.GroupsV3.List(orgID)
 }
 
 func groupNames(client *turso.Client) ([]string, error) {
@@ -273,6 +279,27 @@ func groupNames(client *turso.Client) ([]string, error) {
 }
 
 func getGroup(client *turso.Client, name string) (turso.Group, error) {
+	if !flags.V3Api() {
+		return getGroupV2(client, name)
+	}
+	orgID, err := tryResolveOrgID(client)
+	if err != nil {
+		return turso.Group{}, err
+	}
+	if orgID == "" {
+		return getGroupV2(client, name)
+	}
+	groupID, err := tryResolveGroupID(client, name)
+	if err != nil {
+		return turso.Group{}, err
+	}
+	if groupID == "" {
+		return getGroupV2(client, name)
+	}
+	return client.GroupsV3.Get(orgID, groupID)
+}
+
+func getGroupV2(client *turso.Client, name string) (turso.Group, error) {
 	groups, err := getGroups(client)
 	if err != nil {
 		return turso.Group{}, err

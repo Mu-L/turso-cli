@@ -19,6 +19,7 @@ import (
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/tursodatabase/turso-cli/internal"
+	"github.com/tursodatabase/turso-cli/internal/flags"
 	"github.com/tursodatabase/turso-cli/internal/prompt"
 	"github.com/tursodatabase/turso-cli/internal/settings"
 	"github.com/tursodatabase/turso-cli/internal/turso"
@@ -164,7 +165,7 @@ func destroyDatabases(client *turso.Client, names []string) error {
 	for _, name := range names {
 		name := name
 		g.Go(func() error {
-			return client.Databases.Delete(name)
+			return deleteDatabase(client, name)
 		})
 	}
 
@@ -184,6 +185,27 @@ func destroyDatabases(client *turso.Client, names []string) error {
 	fmt.Println(msg)
 
 	return nil
+}
+
+func deleteDatabase(client *turso.Client, name string) error {
+	if !flags.V3Api() {
+		return client.Databases.Delete(name)
+	}
+	orgID, err := tryResolveOrgID(client)
+	if err != nil {
+		return err
+	}
+	if orgID == "" {
+		return client.Databases.Delete(name)
+	}
+	dbID, err := tryResolveDbID(client, name)
+	if err != nil {
+		return err
+	}
+	if dbID == "" {
+		return client.Databases.Delete(name)
+	}
+	return client.DatabasesV3.Delete(orgID, dbID)
 }
 
 func destroyDatabaseRegion(client *turso.Client, database, region string) error {
@@ -359,6 +381,9 @@ func fetchLatestVersion() (string, error) {
 }
 
 func instancesAndUsage(client *turso.Client, database string) (instances []turso.Instance, usage turso.DbUsage, err error) {
+	if flags.V3Api() {
+		return nil, turso.DbUsage{}, nil
+	}
 	g := errgroup.Group{}
 	g.Go(func() (err error) {
 		instances, err = client.Instances.List(database)

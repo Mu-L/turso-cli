@@ -92,7 +92,7 @@ func CreateDatabase(name string) error {
 		return err
 	}
 
-	groups, err := client.Groups.List()
+	groups, err := listGroups(client)
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func CreateDatabase(name string) error {
 	spinner := prompt.Spinner(fmt.Sprintf("Creating database %s in group %s...", internal.Emph(name), internal.Emph(groupName)))
 	defer spinner.Stop()
 
-	if _, err = client.Databases.Create(name, location, "", "", groupName, schemaFlag, typeFlag == "schema", seed, sizeLimitFlag, remoteEncryptionCipherFlag, remoteEncryptionKeyFlag(), tursoDBFlag, spinner); err != nil {
+	if err := createDatabase(client, name, location, groupName, seed, spinner); err != nil {
 		return fmt.Errorf("could not create database %s: %w", name, err)
 	}
 
@@ -143,6 +143,78 @@ func CreateDatabase(name string) error {
 	fmt.Printf("   %s\n\n", internal.Emph("turso db tokens create "+name))
 	invalidateDatabasesCache()
 	return nil
+}
+
+func createDatabase(client *turso.Client, name, location, groupName string, seed *turso.DBSeed, spinner *prompt.SpinnerT) error {
+	if !flags.V3Api() {
+		return createDatabaseV2(client, name, location, groupName, seed, spinner)
+	}
+	if schemaFlag != "" || typeFlag == "schema" {
+		return createDatabaseV2(client, name, location, groupName, seed, spinner)
+	}
+	if sizeLimitFlag != "" {
+		return createDatabaseV2(client, name, location, groupName, seed, spinner)
+	}
+	if seed != nil && seed.Type != "database" && seed.Type != "upload" {
+		return createDatabaseV2(client, name, location, groupName, seed, spinner)
+	}
+	orgID, err := tryResolveOrgID(client)
+	if err != nil {
+		return err
+	}
+	if orgID == "" {
+		return createDatabaseV2(client, name, location, groupName, seed, spinner)
+	}
+	body := CreateDatabaseV3BodyFromFlags(name, seed)
+	if seed == nil || seed.Type != "database" {
+		groupID, err := tryResolveGroupID(client, groupName)
+		if err != nil {
+			return err
+		}
+		if groupID == "" {
+			return createDatabaseV2(client, name, location, groupName, seed, spinner)
+		}
+		body.GroupID = groupID
+	} else if seed.Type == "database" {
+		_, err := client.DatabasesV3.Create(orgID, body)
+		return err
+	}
+	_, err = client.DatabasesV3.Create(orgID, body)
+	return err
+}
+
+func createDatabaseV2(client *turso.Client, name, location, groupName string, seed *turso.DBSeed, spinner *prompt.SpinnerT) error {
+	_, err := client.Databases.Create(name, location, "", "", groupName, schemaFlag, typeFlag == "schema", seed, sizeLimitFlag, remoteEncryptionCipherFlag, remoteEncryptionKeyFlag(), tursoDBFlag, spinner)
+	return err
+}
+
+func CreateDatabaseV3BodyFromFlags(name string, seed *turso.DBSeed) turso.CreateDatabaseV3Body {
+	body := turso.CreateDatabaseV3Body{
+		Name:         name,
+		CreationMode: "empty",
+	}
+	if tursoDBFlag {
+		body.DatabaseType = "tursodb"
+	} else {
+		body.DatabaseType = "libsql"
+	}
+	if seed != nil && seed.Type == "database" {
+		body.CreationMode = "fork"
+		body.ParentDBName = seed.Name
+		if seed.Timestamp != nil {
+			body.Timestamp = seed.Timestamp
+		}
+	}
+	if seed != nil && seed.Type == "upload" {
+		body.CreationMode = "upload"
+	}
+	if remoteEncryptionKeyFlag() != "" {
+		body.RemoteEncryption = &turso.RemoteEncryption{
+			EncryptionKey:    remoteEncryptionKeyFlag(),
+			EncryptionCipher: remoteEncryptionCipherFlag,
+		}
+	}
+	return body
 }
 
 func ensureGroup(client *turso.Client, group string, groups []turso.Group, location, version string) error {
