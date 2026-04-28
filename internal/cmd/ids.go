@@ -34,8 +34,8 @@ func findOrgID(orgs []turso.Organization, slug string) string {
 func tryResolveGroupID(client *turso.Client, name string) (string, error) {
 	if groups := getGroupsCache(client.Org); groups != nil {
 		for _, g := range groups {
-			if g.Name == name && g.ID != "" {
-				return g.ID, nil
+			if g.Name == name && g.UUID != "" {
+				return g.UUID, nil
 			}
 		}
 	}
@@ -44,7 +44,7 @@ func tryResolveGroupID(client *turso.Client, name string) (string, error) {
 		return "", err
 	}
 	mergeGroupIntoCache(client.Org, group)
-	return group.ID, nil
+	return group.UUID, nil
 }
 
 func mergeGroupIntoCache(org string, group turso.Group) {
