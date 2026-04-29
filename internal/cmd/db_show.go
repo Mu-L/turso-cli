@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/dustin/go-humanize"
+	"github.com/google/uuid"
 
 	"github.com/spf13/cobra"
 	"github.com/tursodatabase/turso-cli/internal"
@@ -113,6 +114,7 @@ var showCmd = &cobra.Command{
 		fmt.Println("Archived:          ", formatBool(db.Sleeping))
 		fmt.Println("Bytes Synced:      ", humanize.Bytes(dbUsage.Usage.BytesSynced))
 		fmt.Println("Is Schema:         ", formatBool(db.IsSchema))
+		fmt.Println("Type:              ", databaseType(dbUsage.UUID))
 		fmt.Println("Delete Protection: ", formatBool(config.IsDeleteProtected()))
 		if db.Schema != "" {
 			fmt.Println("Schema:            ", db.Schema)
@@ -128,4 +130,19 @@ var showCmd = &cobra.Command{
 
 		return nil
 	},
+}
+
+func isTursoDB(dbUUID string) bool {
+	id, err := uuid.Parse(dbUUID)
+	if err != nil {
+		return false
+	}
+	return id[5] == 0x10
+}
+
+func databaseType(dbUUID string) string {
+	if isTursoDB(dbUUID) {
+		return "Turso"
+	}
+	return "SQLite"
 }
