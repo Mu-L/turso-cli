@@ -116,12 +116,14 @@ func (m dbListModel) View() string {
 
 	for _, database := range m.databases {
 		row := []string{database.Name}
+		row = append(row, databaseType(database.ID))
 		row = append(row, formatGroup(database.Group))
 		row = append(row, getDatabaseUrl(&database))
 		data = append(data, row)
 	}
 
 	headers = append(headers, "NAME")
+	headers = append(headers, "TYPE")
 	headers = append(headers, "GROUP")
 	headers = append(headers, "URL")
 
