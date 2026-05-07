@@ -351,7 +351,7 @@ func tokenFromDb(db *turso.Database, client *turso.Client, claim *turso.Permissi
 		return token, nil
 	}
 
-	token, err := client.Databases.Token(db.Name, "2d", false, nil, nil)
+	token, err := generateDbToken(client, db)
 	if err != nil {
 		return "", err
 	}
@@ -360,6 +360,20 @@ func tokenFromDb(db *turso.Database, client *turso.Client, claim *turso.Permissi
 	setDbTokenCache(db.ID, token, exp)
 
 	return token, nil
+}
+
+func generateDbToken(client *turso.Client, db *turso.Database) (string, error) {
+	if !flags.V3Api() {
+		return client.Databases.Token(db.Name, "2d", false, nil, nil)
+	}
+	orgID, err := tryResolveOrgID(client)
+	if err != nil {
+		return "", err
+	}
+	if orgID == "" || db.ID == "" {
+		return client.Databases.Token(db.Name, "2d", false, nil, nil)
+	}
+	return client.DatabasesV3.Token(orgID, db.ID, "2d", false, nil)
 }
 
 func getConnectionInfo(nameOrUrl string, db *turso.Database) string {
